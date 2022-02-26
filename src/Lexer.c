@@ -97,37 +97,6 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
     while (lexer->idx < strlen(buffer) && !(lexer->error)) {
         lexer->curChar = buffer[lexer->idx];
 
-        if (IS_DIGIT(lexer->curChar)) {
-            char* digit = kc_lex_get_int(lexer, buffer);
-            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, false));
-            kc_lex_reset_buffer(lexer);
-            continue;
-        }
-
-        if (IS_WHITESPACE(lexer->curChar) && strlen(lexer->buffer) > 0) {
-            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
-                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
-                lexer->error = true;
-                break;
-            }
-
-            kc_lex_reset_buffer(lexer);
-            ++lexer->idx;
-            continue;
-        } else if (IS_NEWLINE(lexer->curChar) || lexer->curChar == ';') {
-            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN && !(kc_lex_iswhitespace(lexer->buffer))) {
-                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
-                lexer->error = true;
-                break;
-            }
-            
-            kc_lex_reset_buffer(lexer);
-            ++lexer->line;
-            ++lexer->idx;
-            continue;
-        }
-
-
         // Buffer check.
         if (!(IS_ALPHA_LOWER(lexer->curChar)) && !(IS_ALPHA_UPPER(lexer->curChar)) && !(IS_DIGIT(lexer->curChar)) && lexer->onword) {
             if (kc_lex_buffervalid(lexer) == INVLD_TOKEN && !(kc_lex_iswhitespace(lexer->buffer))) {
@@ -141,6 +110,36 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
         } else {
             lexer->onword = true;
         }
+
+        if (IS_NEWLINE(lexer->curChar) || lexer->curChar == ';') {
+            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN && !(kc_lex_iswhitespace(lexer->buffer))) {
+                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
+                break;
+            }
+            
+
+            push_token(&lexer->tokenlist, create_token(T_EOL, "<eol>", false));
+            kc_lex_reset_buffer(lexer);
+            ++lexer->line;
+            ++lexer->idx;
+            continue;
+        } else if (IS_DIGIT(lexer->curChar)) {
+            char* digit = kc_lex_get_int(lexer, buffer);
+            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, false));
+            kc_lex_reset_buffer(lexer);
+            continue;
+        } else if (IS_WHITESPACE(lexer->curChar) && strlen(lexer->buffer) > 0) {
+            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
+                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
+                break;
+            }
+
+            kc_lex_reset_buffer(lexer);
+            ++lexer->idx;
+            continue;
+        }  
 
         switch (lexer->curChar) {
             case '(':

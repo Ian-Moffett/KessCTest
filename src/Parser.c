@@ -1,6 +1,9 @@
 #include "include/Parser.h"
 
 #define KC_DUMP_TOKENS
+#define NO_DECIMAL
+#define UNMATCHED_PAREN 0x1
+
 
 #ifdef KC_DUMP_TOKENS
 static const char* const TOKENS_STR[] =  {
@@ -20,6 +23,124 @@ static const char* const TOKENS_STR[] =  {
 #endif
 
 
+static double parse_add(void);
+static const char* state;
+
+// Checks if state is a valid digit
+static int is_digit(void) {
+	return *state >= '0' && *state <= '9';
+}
+
+// Get the digit value of state
+static int digit() {
+	return *state - '0';
+}
+
+// Parses a number
+static double number() {
+	double result = 0;
+	
+	while (is_digit()) {
+		int n = digit();
+		
+		result *= 10;
+		result += n;
+		
+		++state;
+	}
+	
+	if (*state == '.') {
+		++state;
+		double dec = 0.1;
+		
+		while (is_digit()) {
+			int n = digit();
+			
+			result += n * dec;
+			dec *= 0.1;
+			
+			++state;
+		}
+	}
+	
+	return result;
+}
+
+// Parses a factor (unary, parenthesis, and number)
+static double parse_factor() {
+	switch (*state) {
+		case '+': ++state; return  parse_factor();
+		case '-': ++state; return -parse_factor();
+		case '(': {
+			++state; // eat (
+			double result = parse_add();
+			++state; // eat )
+			
+			return result;
+		}
+		default: return number();
+	}
+}
+
+// Parses * and /
+static double parse_mul() {
+	double left = parse_factor();
+	
+	while (*state == '*' || *state == '/') {
+		char op = *state++;
+		double right = parse_factor();
+		
+		if (op == '*')
+			left *= right;
+		else
+			left /= right;
+	}
+	
+	return left;
+}
+
+// Parses + and -
+static double parse_add() {
+	double left = parse_mul();
+	
+	while (*state == '+' || *state == '-') {
+		char op = *state++;
+		double right = parse_mul();
+		
+		if (op == '+')
+			left += right;
+		else
+			left -= right;
+	}
+	
+	return left;
+}
+
+
+static char* eval(const char* string) {
+	state = string;
+    double res = parse_add();
+
+    char* strRes = (char*)calloc(20, sizeof(char));
+    snprintf(strRes, 19, "%f", res);
+
+    #ifdef NO_DECIMAL
+
+    for (int i = 19; i > -1; --i) {
+        if (strRes[i] == '.') {
+            strRes[i] = '\0';
+            break;
+        }
+
+        strRes[i] = '\0';
+    }
+
+    #endif
+
+	return strRes;
+}
+
+
 static token_t peek(parser_t* parser, unsigned long long idx) {
     return parser->tokenlist.tokens[idx];
 }
@@ -31,7 +152,7 @@ static void advance(parser_t* parser) {
 }
 
 
-bool isop(token_t token) {
+static bool isop(token_t token) {
     switch (token.type) {
         case T_PLUS:
         case T_MINUS:
@@ -44,6 +165,54 @@ bool isop(token_t token) {
 }
 
 
+typedef struct {
+    char* expression;
+    unsigned char errorflag : 3;
+} expression_t;
+
+
+static expression_t kc_parse_expr(parser_t* parser, bool call) {
+    expression_t exp = {
+        .expression = (char*)calloc(2, sizeof(char)),
+        .errorflag = 0x0
+    };
+
+    int lparenCount = 0;
+    int rparenCount = 0;
+    
+    while (parser->idx < parser->tokenlist.size) { 
+        #ifdef KC_DUMP_TOKENS
+        if (parser->curToken.type) {
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+        }
+        #endif
+        
+        if (parser->curToken.type == T_LPAREN) {
+            ++lparenCount;
+        } else if (parser->curToken.type == T_RPAREN) {
+            ++rparenCount;
+        }
+
+
+        if (parser->curToken.type == T_LPAREN || parser->curToken.type == T_RPAREN || parser->curToken.type == T_DIGIT || isop(parser->curToken)) {
+            exp.expression = (char*)realloc(exp.expression, sizeof(char) * (strlen(parser->curToken.tok) + 5));
+            strcat(exp.expression, parser->curToken.tok);
+            advance(parser);
+        } else {
+            lparenCount = call ? lparenCount + 1 : lparenCount;
+            printf("%d=>%d\n", lparenCount, rparenCount);
+
+            if (lparenCount != rparenCount) {
+                exp.errorflag |= UNMATCHED_PAREN;
+            }
+
+            exp.expression[strlen(exp.expression) - 1] = '\0';
+            return exp;
+        }
+    }
+}
+
+
 inline void parse(parser_t* parser) {
     ast_t ast = {
         .size = 0,
@@ -52,15 +221,42 @@ inline void parse(parser_t* parser) {
 
     parser->ast = ast;
 
-    while (parser->idx < parser->tokenlist.size) {
+    int lineNum = 1;
+
+    while (parser->idx < parser->tokenlist.size && !(parser->error)) {
         parser->curToken = parser->tokenlist.tokens[parser->idx];
         #ifdef KC_DUMP_TOKENS
-        if (parser->curToken.type != T_DIGIT) {
+        if (parser->curToken.type) {
             printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
         }
         #endif
 
-        if (parser->curToken.type == T_DIGIT) {
+        if (parser->curToken.type == T_PRINT) {
+            advance(parser); 
+
+            #ifdef KC_DUMP_TOKENS
+            if (parser->curToken.type) {
+                printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            }
+            #endif
+
+            advance(parser);
+
+            if (parser->curToken.type == T_DIGIT && isop(peek(parser, parser->idx + 1))) {
+                expression_t expression = kc_parse_expr(parser, true);
+                if (expression.errorflag & UNMATCHED_PAREN) {
+                    kc_log_err("SyntaxError: Unmatched parenthesis.", "", lineNum);
+                    parser->error = true;
+                    free(expression.expression);
+                    continue;
+                }
+                
+                printf("%s\n", expression.expression);
+                char* res = eval(expression.expression);
+                printf("%s\n", res);
+                free(res);
+                free(expression.expression);
+            }
         }
 
         ++parser->idx;

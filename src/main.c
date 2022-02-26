@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s <args> <filename>\n", argv[0]);
         exit(0);
     } else if (access(srcFile, F_OK) != 0) {
-        printf("Cannot access %s\n", srcFile);
+        printf("Cannot access file: %s\n", srcFile);
         exit(1);
     }
 
