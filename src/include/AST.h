@@ -2,36 +2,33 @@
 #define AST_H
 
 #include <stdlib.h>
-#include <stdbool.h>
+
+typedef enum {
+    A_ADD,
+    A_SUB,
+    A_MUL,
+    A_DIV,
+    A_INT
+} ast_node_type_t;
 
 
-typedef struct {
-    char* key;
-    char* value;
-    bool alloc;
-} node_child_t;
-
-
-typedef struct {
-    char* key;
-    char* value;
-    node_child_t* children;
-    unsigned int nChild;
-    bool alloc;
-    unsigned long lineNumber;
+typedef struct AST_NODE {
+    int op;
+    struct AST_NODE* left;
+    struct AST_NODE* right;
+    int intval;
 } ast_node_t;
 
-
 typedef struct {
-    unsigned long size;
-    ast_node_t* nodes;
+    unsigned long long size;
+    ast_node_t** allocated;
 } ast_t;
 
 
-void ast_push_node(ast_t* ast, ast_node_t node);
-void node_push_child(ast_node_t* node, node_child_t child);
+
+ast_node_t* kc_mkastnode(int op, ast_node_t* left, ast_node_t* right, int intvalue, ast_t* ast);
+ast_node_t* kc_mkastleaf(int op, int intval, ast_t* ast);
+ast_node_t* mkastunary(int op, ast_node_t* left, int intval, ast_t* ast);
 void ast_destroy(ast_t* ast);
-ast_node_t createNode(char* key, char* value, bool alloc, unsigned long lineNum);
-node_child_t createChild(char* key, char* value, bool alloc);
 
 #endif

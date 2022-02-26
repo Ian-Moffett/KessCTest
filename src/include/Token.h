@@ -18,6 +18,7 @@ typedef enum {
     T_RPAREN,
     T_STR,
     T_INT,
+    T_QUOTE,
     INVLD_TOKEN,
 } tokentype_t;
 

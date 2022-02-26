@@ -1,58 +1,36 @@
 #include "include/AST.h"
 
-void ast_push_node(ast_t* ast, ast_node_t node) {
-    ast->nodes[ast->size] = node;
+
+
+ast_node_t* kc_mkastnode(int op, ast_node_t* left, ast_node_t* right, int intval, ast_t* ast) {
+    ast_node_t* node = (ast_node_t*)malloc(sizeof(ast_node_t*));
+    node->op = op;
+    node->left = left;
+    node->right = right;
+    node->intval = intval;
+    ast->allocated[ast->size] = node;
     ++ast->size;
-    ast->nodes = (ast_node_t*)realloc(ast->nodes, sizeof(ast_node_t) * (ast->size + 2));
+
+    return node;
 }
 
 
-void node_push_child(ast_node_t* node, node_child_t child) {
-    node->children[node->nChild] = child;
-    ++node->nChild;
-    node->children = (node_child_t*)realloc(node->children, sizeof(node_child_t) * (node->nChild + 2));
+ast_node_t* kc_mkastleaf(int op, int intval, ast_t* ast) {
+    return kc_mkastnode(op, NULL, NULL, intval, ast);
 }
+
+
+ast_node_t* mkastunary(int op, ast_node_t* left, int intval, ast_t* ast) {
+    return kc_mkastnode(op, left, NULL, intval, ast);
+}
+
 
 void ast_destroy(ast_t* ast) {
     for (int i = 0; i < ast->size; ++i) {
-        for (int j = 0; j < ast->nodes[i].nChild; ++j) {
-            if (ast->nodes[i].children[j].alloc) {
-                free(ast->nodes[i].children[j].value);
-            }
-        }
-
-        if (ast->nodes[i].alloc) {
-            free(ast->nodes[i].value);
-        }
-
-        free(ast->nodes[i].children);
+        free(ast->allocated[i]);
     }
 
-    free(ast->nodes);
-    ast->nodes = NULL;
+    free(ast->allocated);
+    ast->allocated = NULL;
 }
 
-
-ast_node_t createNode(char* key, char* value, bool alloc, unsigned long lineNum) {
-    ast_node_t newNode = {
-        .key = key,
-        .value = value,
-        .alloc = alloc,
-        .nChild = 0,
-        .children = (node_child_t*)malloc(sizeof(node_child_t)),
-        .lineNumber = lineNum
-    };
-
-    return newNode;
-}
-
-
-node_child_t createChild(char* key, char* value, bool alloc) {
-    node_child_t newChild = {
-        .key = key,
-        .value = value,
-        .alloc = alloc,
-    };
-
-    return newChild;
-}

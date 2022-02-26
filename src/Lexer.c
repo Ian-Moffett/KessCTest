@@ -129,6 +129,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                 kc_lex_reset_buffer(lexer);
                 continue;
             case '"':
+                push_token(&lexer->tokenlist, create_token(T_QUOTE, "\"", false));
                 ++lexer->idx;
                 char* str = kc_lex_get_str(lexer, buffer);
                 if (!(str)) {
@@ -137,6 +138,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                 }
 
                 push_token(&lexer->tokenlist, create_token(T_STR, str, true));
+                push_token(&lexer->tokenlist, create_token(T_QUOTE, "\"", false));
                 ++lexer->idx;
                 kc_lex_reset_buffer(lexer);
                 continue;

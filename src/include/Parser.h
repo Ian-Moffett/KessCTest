@@ -6,6 +6,7 @@
 #include "Debugger.h"
 #include <stdbool.h>
 #include <limits.h>
+#include <stdio.h>
 
 
 typedef struct {
