@@ -20,8 +20,9 @@ static void kc_lex_bufpush(lexer_t* lexer, char c) {
 }
 
 
-static tokentype_t kc_lex_buffervalid(char* buffer) {
-    if (strcmp(buffer, reserved[T_PRINT]) == 0) {
+static tokentype_t kc_lex_buffervalid(lexer_t* lexer) {
+    if (strcmp(lexer->buffer, reserved[T_PRINT]) == 0) {
+        push_token(&lexer->tokenlist, create_token(T_PRINT, reserved[T_PRINT], false));
         return T_PRINT;
     }
 
@@ -31,15 +32,26 @@ static tokentype_t kc_lex_buffervalid(char* buffer) {
 
 
 tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
-    while (lexer->idx < strlen(buffer)) {
+    while (lexer->idx < strlen(buffer) && !(lexer->error)) {
         lexer->curChar = buffer[lexer->idx];
 
         if (IS_WHITESPACE(lexer->curChar)) {
-            printf("%s\n", lexer->buffer);
+            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
+                kl_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
+                break;
+            }
+
             kc_lex_reset_buffer(lexer);
             ++lexer->idx;
             continue;
         } else if (IS_NEWLINE(lexer->curChar)) {
+            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
+                kl_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
+                break;
+            }
+
             printf("%s\n", lexer->buffer);
             ++lexer->line;
             ++lexer->idx;
@@ -49,6 +61,12 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
 
         // Buffer check.
         if (!(IS_ALPHA_LOWER(lexer->curChar)) && !(IS_ALPHA_UPPER(lexer->curChar)) && !(IS_DIGIT(lexer->curChar)) && lexer->onword) {
+            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
+                kl_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
+                break;
+            }
+
             printf("%s\n", lexer->buffer);
             kc_lex_reset_buffer(lexer);
             lexer->onword = false;

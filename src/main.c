@@ -51,7 +51,13 @@ int main(int argc, char* argv[]) {
 
     kc_lex_tokenize(&lexer, buffer);
 
-    destroy_tokenlist(&tokenlist);
+    if (lexer.error) {
+        destroy_tokenlist(&lexer.tokenlist);
+        free(buffer);
+        exit(1);
+    }
+
+    destroy_tokenlist(&lexer.tokenlist);
     free(buffer);
     fclose(fp);
 }
