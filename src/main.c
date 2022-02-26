@@ -5,6 +5,12 @@
 #include "include/Lexer.h"
 #include "include/Token.h"
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(__NT__) \
+    || defined (_WIN64) || defined(__WIN64__) || defined(__APPLE__)
+
+#error          // We currently only support Linux.
+#endif
+
 
 int main(int argc, char* argv[]) {
     char* srcFile = NULL;
