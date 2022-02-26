@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "include/Lexer.h"
+#include "include/Token.h"
 
 
 int main(int argc, char* argv[]) {
@@ -15,8 +17,11 @@ int main(int argc, char* argv[]) {
     }
 
     if (!(srcFile)) {
-        printf("Usage: %s <optional args> <filename>", argv[0]);
+        printf("Usage: %s <optional args> <filename>\n", argv[0]);
         exit(0);
+    } else if (access(srcFile, F_OK) != 0) {
+        printf("Cannot access %s\n", srcFile);
+        exit(1);
     }
 
     FILE* fp = fopen(srcFile, "r");
@@ -29,7 +34,24 @@ int main(int argc, char* argv[]) {
 
     fread(buffer, sizeof(char), fsize, fp);
 
-    printf("%s\n", buffer);
+    tokenlist_t tokenlist = {
+        .size = 0,
+        .tokens = (token_t*)malloc(sizeof(token_t))
+    };
 
+    lexer_t lexer = {
+        .line = 1,
+        .idx = 0,
+        .buffer = (char*)calloc(2, sizeof(char)),
+        .bufferidx = 0,
+        .error = false,
+        .tokenlist = tokenlist,
+        .onword = false,
+    };
+
+    kc_lex_tokenize(&lexer, buffer);
+
+    destroy_tokenlist(&tokenlist);
+    free(buffer);
     fclose(fp);
 }
