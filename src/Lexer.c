@@ -136,7 +136,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                     continue;
                 }
 
-                push_token(&lexer->tokenlist, create_token(T_STR, str, false));
+                push_token(&lexer->tokenlist, create_token(T_STR, str, true));
                 ++lexer->idx;
                 kc_lex_reset_buffer(lexer);
                 continue;

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "include/Lexer.h"
 #include "include/Token.h"
+#include "include/Parser.h"
+
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(__NT__) \
     || defined (_WIN64) || defined(__WIN64__) || defined(__APPLE__)
@@ -62,6 +64,16 @@ int main(int argc, char* argv[]) {
         free(buffer);
         exit(1);
     }
+
+    parser_t parser = {
+        .idx = 0,
+        .tokenlist = lexer.tokenlist,
+        .error = false,
+    };
+
+    parse(&parser);
+
+    ast_destroy(&parser.ast);
 
     destroy_tokenlist(&lexer.tokenlist);
     free(buffer);
