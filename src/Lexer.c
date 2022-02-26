@@ -51,8 +51,8 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                 lexer->error = true;
                 break;
             }
-
-            printf("%s\n", lexer->buffer);
+            
+            kc_lex_reset_buffer(lexer);
             ++lexer->line;
             ++lexer->idx;
             continue;
