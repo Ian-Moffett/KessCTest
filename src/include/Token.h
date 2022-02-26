@@ -10,9 +10,14 @@
 #define IS_WHITESPACE(ch) (ch == '\t' || ch == ' ')
 #define IS_NEWLINE(ch) (ch == '\n')
 
+
 typedef enum {
     T_PRINT, 
     T_DIGIT,
+    T_LPAREN,
+    T_RPAREN,
+    T_STR,
+    T_INT,
     INVLD_TOKEN,
 } tokentype_t;
 
