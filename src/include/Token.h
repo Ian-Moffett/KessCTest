@@ -17,8 +17,13 @@ typedef enum {
     T_LPAREN,
     T_RPAREN,
     T_STR,
-    T_INT,
     T_QUOTE,
+    T_PLUS,
+    T_MINUS,
+    T_STAR,
+    T_SLASH,
+    T_EOL,
+    T_SEMI,
     INVLD_TOKEN,
 } tokentype_t;
 

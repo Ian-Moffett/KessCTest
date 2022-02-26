@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <signal.h>
 #include "include/Lexer.h"
 #include "include/Token.h"
 #include "include/Parser.h"
@@ -25,7 +26,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!(srcFile)) {
-        printf("Usage: %s <optional args> <filename>\n", argv[0]);
+        printf("Usage: %s <args> <filename>\n", argv[0]);
         exit(0);
     } else if (access(srcFile, F_OK) != 0) {
         printf("Cannot access %s\n", srcFile);
@@ -62,6 +63,7 @@ int main(int argc, char* argv[]) {
     if (lexer.error) {
         destroy_tokenlist(&lexer.tokenlist);
         free(buffer);
+        fclose(fp);
         exit(1);
     }
 
@@ -73,8 +75,16 @@ int main(int argc, char* argv[]) {
 
     parse(&parser);
 
-    ast_destroy(&parser.ast);
+    if (parser.error) {
+        ast_destroy(&parser.ast);
+        destroy_tokenlist(&lexer.tokenlist);
+        free(buffer);
+        fclose(fp);
+        exit(1); 
+    }
 
+
+    ast_destroy(&parser.ast);
     destroy_tokenlist(&lexer.tokenlist);
     free(buffer);
     fclose(fp);

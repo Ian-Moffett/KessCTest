@@ -1,7 +1,7 @@
 #include "include/Debugger.h"
 
 
-void kl_log_err(const char* error_msg, const char* offendingLine, unsigned long long lineNum) {
+void kc_log_err(const char* error_msg, const char* offendingLine, unsigned long long lineNum) {
     printf("\033[93m%s\nLine %d\n", error_msg, lineNum);
 
     if (strcmp(offendingLine, "") != 0) {
