@@ -20,6 +20,7 @@ static const char* const TOKENS_STR[] =  {
     "T_EOL",
     "T_SEMI",
     "T_UINT",
+    "T_IDENTIFIER",
 };
 #endif
 

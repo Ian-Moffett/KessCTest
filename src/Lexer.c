@@ -14,14 +14,50 @@ static void kc_lex_bufpush(lexer_t* lexer, char c) {
 }
 
 
+static char* kc_lex_getident(lexer_t* lexer, char* buffer) {
+    char* identbuf = (char*)calloc(2, sizeof(char));
+    unsigned int idbidx = 0;
+
+    while (lexer->idx < strlen(buffer) && buffer[lexer->idx] != ' ') {++lexer->idx;}
+    while (lexer->idx < strlen(buffer) && buffer[lexer->idx] == ' ') {++lexer->idx;}
+
+    while (lexer->idx < strlen(buffer)) {
+        lexer->curChar = buffer[lexer->idx];
+
+        if (!(IS_DIGIT(lexer->curChar)) && !(IS_ALPHA_LOWER(lexer->curChar)) && !(IS_ALPHA_UPPER(lexer->curChar)) && lexer->curChar != '_') {
+            break;
+        }
+
+        identbuf[idbidx] = lexer->curChar;
+        ++idbidx;
+        ++lexer->idx;
+        identbuf = (char*)realloc(identbuf, sizeof(char) * (idbidx + 2));
+    }
+
+    if (strlen(identbuf) == 0) {
+        free(identbuf);
+        return NULL;
+    }
+        
+    return identbuf;
+}
+
+
 static tokentype_t kc_lex_buffervalid(lexer_t* lexer, char* buffer) {
     if (strcmp(lexer->buffer, "printf") == 0) {
         push_token(&lexer->tokenlist, create_token(T_PRINT, "printf", false));
         return T_PRINT;
-    } else if (strcmp(lexer->buffer, "uint") == 0) {
+    } else if (strcmp(lexer->buffer, "uint8") == 0) {
         char* buffercpy = (char*)calloc(strlen(lexer->buffer) + 2, sizeof(char));
         strcpy(buffercpy, lexer->buffer);
-        push_token(&lexer->tokenlist, create_token(T_UINT, buffercpy, false));
+        push_token(&lexer->tokenlist, create_token(T_UINT, buffercpy, true));
+
+        char* ident = kc_lex_getident(lexer, buffer);
+
+        if (ident) {             
+            push_token(&lexer->tokenlist, create_token(T_IDENTIFIER, ident, true));
+        }
+
         return T_UINT;
     }
 
@@ -105,14 +141,35 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
         }
 
         if (IS_DIGIT(lexer->curChar)) {  
+            /*
             if (!(kc_lex_iswhitespace(lexer->buffer)) && strlen(lexer->buffer) > 0 && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN) {
                 kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
                 lexer->error = true;
                 continue;
             }
+            */
 
             char* digit = kc_lex_get_int(lexer, buffer);
-            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, true)); 
+
+            for (int i = 0; i < strlen(digit); ++i) {
+                kc_lex_bufpush(lexer, digit[i]);
+            }
+
+            tokentype_t type = kc_lex_buffervalid(lexer, buffer);
+
+            switch (type) {
+                case T_UINT:
+                    free(digit);
+                    break;
+                default:
+                    push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, true)); 
+                    break;
+            }
+
+            if (type) {
+                kc_lex_reset_buffer(lexer);
+                continue;
+            }
         }
             
         switch (lexer->curChar) {
