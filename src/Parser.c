@@ -264,6 +264,8 @@ inline void parse(parser_t* parser) {
                 ast_node_t printNode = createNode("PRINTF", parser->curToken.tok, false, lineNum);
                 ast_push_node(&parser->ast, printNode);
                 advance(parser);
+            } else if (parser->curToken.type == T_EOL) {
+                ++lineNum;
             }
         }
 

@@ -4,6 +4,20 @@
 static char* reserved[] = {
     "printf",
     "<digit>",
+    "(",
+    ")",
+    "<str>",
+    "\"",
+    "+",
+    "-",
+    "*",
+    "/",
+    "\\n",
+    ";",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
 };
 
 
@@ -24,6 +38,8 @@ static tokentype_t kc_lex_buffervalid(lexer_t* lexer) {
     if (strcmp(lexer->buffer, reserved[T_PRINT]) == 0) {
         push_token(&lexer->tokenlist, create_token(T_PRINT, reserved[T_PRINT], false));
         return T_PRINT;
+    } else if (strcmp(lexer->buffer, reserved[T_UINT8])) {
+        // return T_UINT8;
     }
 
     return INVLD_TOKEN;
@@ -127,6 +143,14 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
         } else if (IS_DIGIT(lexer->curChar)) {
             char* digit = kc_lex_get_int(lexer, buffer);
             push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, true));
+
+            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
+                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
+                break;
+            }
+
+
             kc_lex_reset_buffer(lexer);
             continue;
         } else if (IS_WHITESPACE(lexer->curChar) && strlen(lexer->buffer) > 0) {

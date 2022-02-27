@@ -24,7 +24,11 @@ typedef enum {
     T_SLASH,
     T_EOL,
     T_SEMI,
-    INVLD_TOKEN,
+    T_UINT8,
+    T_UINT16,
+    T_UINT32,
+    T_UINT64,
+    INVLD_TOKEN, 
 } tokentype_t;
 
 
