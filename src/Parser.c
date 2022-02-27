@@ -1,6 +1,5 @@
 #include "include/Parser.h"
 
-#define KC_DUMP_TOKENS
 #define NO_DECIMAL
 #define UNMATCHED_PAREN 0x1
 
