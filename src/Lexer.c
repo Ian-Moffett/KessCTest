@@ -1,26 +1,6 @@
 #include "include/Lexer.h"
 
 
-static char* reserved[] = {
-    "printf",
-    "<digit>",
-    "(",
-    ")",
-    "<str>",
-    "\"",
-    "+",
-    "-",
-    "*",
-    "/",
-    "\\n",
-    ";",
-    "uint8",
-    "uint16",
-    "uint32",
-    "uint64",
-};
-
-
 static void kc_lex_reset_buffer(lexer_t* lexer) {
     memset(lexer->buffer, '\0', strlen(lexer->buffer));
     lexer->bufferidx = 0;
@@ -34,12 +14,15 @@ static void kc_lex_bufpush(lexer_t* lexer, char c) {
 }
 
 
-static tokentype_t kc_lex_buffervalid(lexer_t* lexer) {
-    if (strcmp(lexer->buffer, reserved[T_PRINT]) == 0) {
-        push_token(&lexer->tokenlist, create_token(T_PRINT, reserved[T_PRINT], false));
+static tokentype_t kc_lex_buffervalid(lexer_t* lexer, char* buffer) {
+    if (strcmp(lexer->buffer, "printf") == 0) {
+        push_token(&lexer->tokenlist, create_token(T_PRINT, "printf", false));
         return T_PRINT;
-    } else if (strcmp(lexer->buffer, reserved[T_UINT8])) {
-        // return T_UINT8;
+    } else if (strcmp(lexer->buffer, "uint") == 0) {
+        char* buffercpy = (char*)calloc(strlen(lexer->buffer) + 2, sizeof(char));
+        strcpy(buffercpy, lexer->buffer);
+        push_token(&lexer->tokenlist, create_token(T_UINT, buffercpy, false));
+        return T_UINT;
     }
 
     return INVLD_TOKEN;
@@ -111,62 +94,40 @@ static char* kc_lex_get_int(lexer_t* lexer, char* buffer) {
 
 tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
     while (lexer->idx < strlen(buffer) && !(lexer->error)) {
-        lexer->curChar = buffer[lexer->idx];
+        lexer->curChar = buffer[lexer->idx];   
 
-        // Buffer check.
-        if (!(IS_ALPHA_LOWER(lexer->curChar)) && !(IS_ALPHA_UPPER(lexer->curChar)) && !(IS_DIGIT(lexer->curChar)) && lexer->onword) {
-            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN && !(kc_lex_iswhitespace(lexer->buffer))) {
-                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+        if (IS_NEWLINE(lexer->curChar) || IS_WHITESPACE(lexer->curChar)) {
+            if (!(kc_lex_iswhitespace(lexer->buffer)) && strlen(lexer->buffer) > 0 && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN) {
+                kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
                 lexer->error = true;
-                break;
+                continue;
             }
-
-            kc_lex_reset_buffer(lexer);
-            lexer->onword = false;
-        } else {
-            lexer->onword = true;
         }
 
-        if (IS_NEWLINE(lexer->curChar) || lexer->curChar == ';') {
-            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN && !(kc_lex_iswhitespace(lexer->buffer))) {
-                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
+        if (IS_DIGIT(lexer->curChar)) {  
+            if (!(kc_lex_iswhitespace(lexer->buffer)) && strlen(lexer->buffer) > 0 && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN) {
+                kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
                 lexer->error = true;
-                break;
+                continue;
             }
-            
 
-            push_token(&lexer->tokenlist, create_token(T_EOL, "<eol>", false));
-            kc_lex_reset_buffer(lexer);
-            ++lexer->line;
-            ++lexer->idx;
-            continue;
-        } else if (IS_DIGIT(lexer->curChar)) {
             char* digit = kc_lex_get_int(lexer, buffer);
-            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, true));
-
-            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
-                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
-                lexer->error = true;
-                break;
-            }
-
-
-            kc_lex_reset_buffer(lexer);
-            continue;
-        } else if (IS_WHITESPACE(lexer->curChar) && strlen(lexer->buffer) > 0) {
-            if (kc_lex_buffervalid(lexer) == INVLD_TOKEN) {
-                kc_log_err("TokenError: Invalid token found while lexing.", lexer->buffer, lexer->line);
-                lexer->error = true;
-                break;
-            }
-
-            kc_lex_reset_buffer(lexer);
-            ++lexer->idx;
-            continue;
-        }  
-
+            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, true)); 
+        }
+            
         switch (lexer->curChar) {
+            case ';':
+                push_token(&lexer->tokenlist, create_token(T_SEMI, ";", false));
+                kc_lex_reset_buffer(lexer);
+                ++lexer->idx;
+                continue;
             case '(':
+                if (!(kc_lex_iswhitespace(lexer->buffer)) && strlen(lexer->buffer) > 0 && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN) {
+                    kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
+                    lexer->error = true;
+                    continue;
+                }
+
                 push_token(&lexer->tokenlist, create_token(T_LPAREN, "(", false));
                 ++lexer->idx;
                 kc_lex_reset_buffer(lexer);

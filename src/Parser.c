@@ -1,5 +1,6 @@
 #include "include/Parser.h"
 
+#define KC_DUMP_TOKENS
 #define NO_DECIMAL
 #define UNMATCHED_PAREN 0x1
 
@@ -18,6 +19,7 @@ static const char* const TOKENS_STR[] =  {
     "T_SLASH",
     "T_EOL",
     "T_SEMI",
+    "T_UINT",
 };
 #endif
 
@@ -197,6 +199,7 @@ static expression_t kc_parse_expr(parser_t* parser, bool call) {
             advance(parser);
         } else {
             lparenCount = call ? lparenCount + 1 : lparenCount;
+            // rparenCount = call ? rparenCount + 1 : rparenCount;
             #ifdef KC_DUMP_TOKENS
             printf("LPAREN:RPAREN RATIO: %d:%d\n", lparenCount, rparenCount);
             #endif
