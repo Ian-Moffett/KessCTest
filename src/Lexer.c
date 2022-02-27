@@ -166,8 +166,11 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                     break;
             }
 
-            if (type) {
+            if (type != INVLD_TOKEN) {
                 kc_lex_reset_buffer(lexer);
+            } else {
+                kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
+                lexer->error = true;
             }
 
             continue;
