@@ -171,6 +171,21 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                 ++lexer->idx;
                 kc_lex_reset_buffer(lexer);
                 continue;
+            case '*':
+                push_token(&lexer->tokenlist, create_token(T_STAR, "*", false));
+                ++lexer->idx;
+                kc_lex_reset_buffer(lexer);
+                continue;
+            case '-':
+                push_token(&lexer->tokenlist, create_token(T_MINUS, "-", false));
+                ++lexer->idx;
+                kc_lex_reset_buffer(lexer);
+                continue;
+            case '/':
+                push_token(&lexer->tokenlist, create_token(T_SLASH, "/", false));
+                ++lexer->idx;
+                kc_lex_reset_buffer(lexer);
+                continue;
         }
 
         kc_lex_bufpush(lexer, lexer->curChar);
