@@ -168,8 +168,9 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
 
             if (type) {
                 kc_lex_reset_buffer(lexer);
-                continue;
             }
+
+            continue;
         }
             
         switch (lexer->curChar) {
