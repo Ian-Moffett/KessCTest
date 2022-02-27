@@ -126,7 +126,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
             continue;
         } else if (IS_DIGIT(lexer->curChar)) {
             char* digit = kc_lex_get_int(lexer, buffer);
-            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, false));
+            push_token(&lexer->tokenlist, create_token(T_DIGIT, digit, true));
             kc_lex_reset_buffer(lexer);
             continue;
         } else if (IS_WHITESPACE(lexer->curChar) && strlen(lexer->buffer) > 0) {

@@ -6,6 +6,7 @@
 #include "include/Lexer.h"
 #include "include/Token.h"
 #include "include/Parser.h"
+#include "include/CodeGen.h"
 
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(__NT__) \
@@ -15,9 +16,11 @@
 #endif
 
 
+bool codegenerror = false;
+
+
 int main(int argc, char* argv[]) {
     char* srcFile = NULL;
-
     for (int i = 1; i < argc; ++i) {
         if (argv[i][0] != '-') {
             srcFile = argv[i];
@@ -58,9 +61,11 @@ int main(int argc, char* argv[]) {
         .onword = false,
     };
 
+    
     kc_lex_tokenize(&lexer, buffer);
 
     if (lexer.error) {
+        free(lexer.buffer);
         destroy_tokenlist(&lexer.tokenlist);
         free(buffer);
         fclose(fp);
@@ -83,9 +88,11 @@ int main(int argc, char* argv[]) {
         exit(1); 
     }
 
+    kc_gen_machine_code(parser.ast);
 
     ast_destroy(&parser.ast);
     destroy_tokenlist(&lexer.tokenlist);
+    free(lexer.buffer);
     free(buffer);
     fclose(fp);
 }

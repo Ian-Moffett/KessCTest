@@ -125,7 +125,6 @@ static char* eval(const char* string) {
     snprintf(strRes, 19, "%f", res);
 
     #ifdef NO_DECIMAL
-
     for (int i = 19; i > -1; --i) {
         if (strRes[i] == '.') {
             strRes[i] = '\0';
@@ -134,7 +133,6 @@ static char* eval(const char* string) {
 
         strRes[i] = '\0';
     }
-
     #endif
 
 	return strRes;
@@ -200,7 +198,9 @@ static expression_t kc_parse_expr(parser_t* parser, bool call) {
             advance(parser);
         } else {
             lparenCount = call ? lparenCount + 1 : lparenCount;
-            printf("%d=>%d\n", lparenCount, rparenCount);
+            #ifdef KC_DUMP_TOKENS
+            printf("LPAREN:RPAREN RATIO: %d:%d\n", lparenCount, rparenCount);
+            #endif
 
             if (lparenCount != rparenCount) {
                 exp.errorflag |= UNMATCHED_PAREN;
@@ -232,17 +232,18 @@ inline void parse(parser_t* parser) {
         #endif
 
         if (parser->curToken.type == T_PRINT) {
+            #ifdef KC_DUMP_TOKENS
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            #endif
             advance(parser); 
 
             #ifdef KC_DUMP_TOKENS
-            if (parser->curToken.type) {
-                printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            }
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
             #endif
 
             advance(parser);
 
-            if (parser->curToken.type == T_DIGIT && isop(peek(parser, parser->idx + 1))) {
+            if (parser->curToken.type == T_DIGIT && isop(peek(parser, parser->idx + 1))) { 
                 expression_t expression = kc_parse_expr(parser, true);
                 if (expression.errorflag & UNMATCHED_PAREN) {
                     kc_log_err("SyntaxError: Unmatched parenthesis.", "", lineNum);
@@ -250,12 +251,20 @@ inline void parse(parser_t* parser) {
                     free(expression.expression);
                     continue;
                 }
-                
-                printf("%s\n", expression.expression);
-                char* res = eval(expression.expression);
-                printf("%s\n", res);
-                free(res);
-                free(expression.expression);
+               
+                ast_node_t printNode = createNode("PRINTF", eval(expression.expression), true, lineNum);
+                ast_push_node(&parser->ast, printNode);
+
+                #ifdef KC_DUMP_TOKENS
+                printf("KC_EXPRESSION: %s\n", expression.expression);
+                #endif
+
+               free(expression.expression);
+            } else if (parser->curToken.type == T_QUOTE) {
+                advance(parser);
+                ast_node_t printNode = createNode("PRINTF", parser->curToken.tok, false, lineNum);
+                ast_push_node(&parser->ast, printNode);
+                advance(parser);
             }
         }
 
