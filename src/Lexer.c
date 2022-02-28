@@ -50,7 +50,7 @@ static tokentype_t kc_lex_buffervalid(lexer_t* lexer, char* buffer) {
     } else if (strcmp(lexer->buffer, "uint8") == 0) {
         char* buffercpy = (char*)calloc(strlen(lexer->buffer) + 2, sizeof(char));
         strcpy(buffercpy, lexer->buffer);
-        push_token(&lexer->tokenlist, create_token(T_UINT, buffercpy, true));
+        push_token(&lexer->tokenlist, create_token(T_UINT8, buffercpy, true));
 
         char* ident = kc_lex_getident(lexer, buffer);
 
@@ -58,7 +58,7 @@ static tokentype_t kc_lex_buffervalid(lexer_t* lexer, char* buffer) {
             push_token(&lexer->tokenlist, create_token(T_IDENTIFIER, ident, true));
         }
 
-        return T_UINT;
+        return T_UINT8;
     }
 
     return INVLD_TOKEN;
@@ -158,7 +158,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
             tokentype_t type = kc_lex_buffervalid(lexer, buffer);
 
             switch (type) {
-                case T_UINT:
+                case T_UINT8:
                     free(digit);
                     break;
                 default:
