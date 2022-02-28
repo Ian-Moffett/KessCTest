@@ -188,7 +188,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
             
         switch (lexer->curChar) {
             case '=':
-                push_token(&lexer->tokenlist, create_token(T_SEMI, ";", false));
+                push_token(&lexer->tokenlist, create_token(T_EQUALS, "=", false));
                 kc_lex_reset_buffer(lexer);
                 ++lexer->idx;
                 continue;
