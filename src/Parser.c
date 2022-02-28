@@ -265,6 +265,10 @@ inline void parse(parser_t* parser) {
 
             advance(parser);
 
+            #ifdef KC_DUMP_TOKENS
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            #endif
+
             if (parser->curToken.type == T_DIGIT && isop(peek(parser, parser->idx + 1))) { 
                 expression_t expression = kc_parse_expr(parser, true);
                 if (expression.errorflag & UNMATCHED_PAREN) {
@@ -325,11 +329,13 @@ inline void parse(parser_t* parser) {
             }
   
             
-            advance(parser);
+            if (assignment) {
+                advance(parser);
  
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
+                #ifdef KC_DUMP_TOKENS
+                printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+                #endif
+            }
 
             switch (datatype) {
                 case T_UINT8:
@@ -342,7 +348,7 @@ inline void parse(parser_t* parser) {
             }
 
             ast_node_t varNode = createNode("VAR", name, false, lineNum);
- 
+
             switch (datatype) {
                 case T_UINT8:
                     node_push_child(&varNode, createChild("TYPE", "uint8", false));
