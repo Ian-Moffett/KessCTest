@@ -1,10 +1,13 @@
 #include "include/CodeGen.h"
 
-extern bool codegenerror;
+extern bool asmonly;
+
 
 void kc_gen_machine_code(ast_t ast) {
     section_t curSection = S_TEXT;
     ast_node_t curNode;
+
+    bool codegenerror = false;
 
     unsigned long long symbolCount = 0;
 
@@ -60,6 +63,23 @@ void kc_gen_machine_code(ast_t ast) {
             fprintf(fp, "    mov ecx, LC%d\n", ldatac - 1);
             fprintf(fp, "    int 0x80\n\n");
             ++lcodec;
+        } else if (strcmp(curNode.key, "VAR") == 0) {
+
+            if (curSection != S_TEXT) {
+                fprintf(fp, "section .text\n");
+            }
+
+            fprintf(fp, "_%d: jmp _%d\n\n", lcodec, lcodec + 1);
+            ++lcodec;
+
+            if (curSection != S_BSS) {
+                curSection = S_BSS;
+                fprintf(fp, "section .bss\n");
+            }
+
+            if (strcmp(curNode.children[0].value, "uint8") == 0) {
+                fprintf(fp, "v_%s: resb 1\n\n", curNode.value);
+            }
         }
     }
 
@@ -73,14 +93,20 @@ void kc_gen_machine_code(ast_t ast) {
     fprintf(fp, "    int 0x80\n");
 
     fclose(fp);
-
-    system("nasm -felf32 /tmp/__KC_SOURCE.s -o /tmp/__KC_OBJ.o");
-    system("ld /tmp/__KC_OBJ.o -melf_i386 -o $PWD/a.out");
+    
+    if (!(codegenerror) && !(asmonly)) {
+        system("nasm -felf32 /tmp/__KC_SOURCE.s -o /tmp/__KC_OBJ.o");
+        system("ld /tmp/__KC_OBJ.o -melf_i386 -o $PWD/a.out");
+    } else if (asmonly) { 
+        system("mv /tmp/__KC_SOURCE.s $PWD/KessC.out.s");
+    }
 
     if (access("/tmp/__KL_SOURCE.s", F_OK) == 0) {
         remove("/tmp/__KL_SOURCE.s");
     }
 
-    remove("/tmp/__KC_SOURCE.s");
-    remove("/tmp/__KC_OBJ.o");
+    if (!(codegenerror)) {
+        remove("/tmp/__KC_SOURCE.s");
+        remove("/tmp/__KC_OBJ.o");
+    }
 }
