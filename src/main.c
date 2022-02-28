@@ -16,7 +16,7 @@
 #endif
 
 
-bool codegenerror = false;
+bool asmonly = false;
 
 
 int main(int argc, char* argv[]) {
@@ -25,6 +25,8 @@ int main(int argc, char* argv[]) {
         if (argv[i][0] != '-') {
             srcFile = argv[i];
             break;
+        } else if (strcmp(argv[i], "-s") == 0) {
+            asmonly = true;
         }
     }
 

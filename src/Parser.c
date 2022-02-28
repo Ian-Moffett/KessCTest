@@ -19,7 +19,7 @@ static const char* const TOKENS_STR[] =  {
     "T_SLASH",
     "T_EOL",
     "T_SEMI",
-    "T_UINT",
+    "T_UINT8",
     "T_IDENTIFIER",
 };
 #endif
@@ -165,10 +165,28 @@ static bool isop(token_t token) {
 }
 
 
+static bool isDatatype(token_t token) {
+    switch (token.type) {
+        case T_UINT8:
+            return true;
+    }
+
+    return false;
+}
+
+
 typedef struct {
     char* expression;
     unsigned char errorflag : 3;
 } expression_t;
+
+
+static void kc_parse_assert(bool c, parser_t* parser, const char* const MSG, const char* const OFFENDING_LINE, unsigned long long line) {
+    if (!(c)) {
+        kc_log_err(MSG, OFFENDING_LINE, line);
+        parser->error = true;
+    }
+}
 
 
 static expression_t kc_parse_expr(parser_t* parser, bool call) {
@@ -271,6 +289,49 @@ inline void parse(parser_t* parser) {
             } else if (parser->curToken.type == T_EOL) {
                 ++lineNum;
             }
+        } else if (isDatatype(parser->curToken)) { 
+            tokentype_t datatype = parser->curToken.type;
+            advance(parser);
+
+            #ifdef KC_DUMP_TOKENS
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            #endif
+
+            kc_parse_assert(parser->curToken.type == T_IDENTIFIER, parser, "SyntaxError: Expected identifier after typename.", "", lineNum);
+
+            char* name = parser->curToken.tok;
+
+            if (parser->error) {
+                break;
+            }
+
+            advance(parser);
+ 
+            #ifdef KC_DUMP_TOKENS
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            #endif
+
+            // TODO: Add assignment.
+            kc_parse_assert(parser->curToken.type == T_EOL || parser->curToken.type == T_SEMI, parser, "SyntaxError: Expected assignment or nothing after identifier.", "", lineNum);
+
+            if (parser->error) {
+                break;
+            }
+
+
+            ast_node_t varNode = createNode("VAR", name, false, lineNum);
+            
+            switch (datatype) {
+                case T_UINT8:
+                    node_push_child(&varNode, createChild("TYPE", "uint8", false));
+                    break;
+            }
+            
+            advance(parser);
+ 
+            // TODO: Change this when adding assignment.
+            node_push_child(&varNode, createChild("NO_INIT", "null", false));
+            ast_push_node(&parser->ast, varNode);
         }
 
         ++parser->idx;
