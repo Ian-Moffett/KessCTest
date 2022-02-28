@@ -150,6 +150,9 @@ static token_t peek(parser_t* parser, unsigned long long idx) {
 static void advance(parser_t* parser) {
     ++parser->idx;
     parser->curToken = parser->tokenlist.tokens[parser->idx];
+    #ifdef KC_DUMP_TOKENS
+    printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+    #endif
 }
 
 
@@ -253,21 +256,13 @@ inline void parse(parser_t* parser) {
         }
         #endif
 
-        if (parser->curToken.type == T_PRINT) {
+        if (parser->curToken.type == T_PRINT) { 
             #ifdef KC_DUMP_TOKENS
             printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
             #endif
+
             advance(parser); 
-
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
-
             advance(parser);
-
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
 
             if (parser->curToken.type == T_DIGIT && isop(peek(parser, parser->idx + 1))) { 
                 expression_t expression = kc_parse_expr(parser, true);
@@ -295,14 +290,13 @@ inline void parse(parser_t* parser) {
                 ++lineNum;
             }
         } else if (isDatatype(parser->curToken)) { 
+            #ifdef KC_DUMP_TOKENS
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            #endif
             bool assignment = false;
             
             tokentype_t datatype = parser->curToken.type;
             advance(parser);
-
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
 
             kc_parse_assert(parser->curToken.type == T_IDENTIFIER, parser, "SyntaxError: Expected identifier after typename.", "", lineNum);
 
@@ -312,11 +306,7 @@ inline void parse(parser_t* parser) {
                 break;
             }
 
-            advance(parser);
- 
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
+            advance(parser); 
 
             kc_parse_assert(parser->curToken.type == T_EOL || parser->curToken.type == T_SEMI || parser->curToken.type == T_EQUALS, parser, "SyntaxError: Expected assignment or nothing after identifier.", "", lineNum);
 
@@ -330,11 +320,7 @@ inline void parse(parser_t* parser) {
   
             
             if (assignment) {
-                advance(parser);
- 
-                #ifdef KC_DUMP_TOKENS
-                printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-                #endif
+                advance(parser); 
             }
 
             switch (datatype) {
