@@ -64,7 +64,6 @@ void kc_gen_machine_code(ast_t ast) {
             fprintf(fp, "    int 0x80\n\n");
             ++lcodec;
         } else if (strcmp(curNode.key, "VAR") == 0) {
-
             if (curSection != S_TEXT) {
                 fprintf(fp, "section .text\n");
             }
@@ -72,13 +71,18 @@ void kc_gen_machine_code(ast_t ast) {
             fprintf(fp, "_%d: jmp _%d\n\n", lcodec, lcodec + 1);
             ++lcodec;
 
-            if (curSection != S_BSS) {
+            if (curSection != S_BSS && strcmp(curNode.children[1].key, "NO_INIT") == 0) {
                 curSection = S_BSS;
                 fprintf(fp, "section .bss\n");
+            } else if (curSection != S_DATA && strcmp(curNode.children[1].key, "VALUE") == 0) {
+                curSection = S_DATA;
+                fprintf(fp, "section .data\n");
             }
 
-            if (strcmp(curNode.children[0].value, "uint8") == 0) {
+            if (strcmp(curNode.children[0].value, "uint8") == 0 && curSection == S_BSS) {
                 fprintf(fp, "v_%s: resb 1\n\n", curNode.value);
+            } else if (curSection == S_DATA) {
+                fprintf(fp, "v_%s: db %s\n\n", curNode.value, curNode.children[1].value);
             }
         }
     }

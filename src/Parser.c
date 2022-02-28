@@ -21,6 +21,7 @@ static const char* const TOKENS_STR[] =  {
     "T_SEMI",
     "T_UINT8",
     "T_IDENTIFIER",
+    "T_EQUALS",
 };
 #endif
 
@@ -290,6 +291,8 @@ inline void parse(parser_t* parser) {
                 ++lineNum;
             }
         } else if (isDatatype(parser->curToken)) { 
+            bool assignment = false;
+            
             tokentype_t datatype = parser->curToken.type;
             advance(parser);
 
@@ -311,26 +314,47 @@ inline void parse(parser_t* parser) {
             printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
             #endif
 
-            // TODO: Add assignment.
-            kc_parse_assert(parser->curToken.type == T_EOL || parser->curToken.type == T_SEMI, parser, "SyntaxError: Expected assignment or nothing after identifier.", "", lineNum);
+            kc_parse_assert(parser->curToken.type == T_EOL || parser->curToken.type == T_SEMI || parser->curToken.type == T_EQUALS, parser, "SyntaxError: Expected assignment or nothing after identifier.", "", lineNum);
 
             if (parser->error) {
                 break;
             }
 
+            if (parser->curToken.type == T_EQUALS) {
+                assignment = true;
+            }
+  
+            
+            advance(parser);
+ 
+            #ifdef KC_DUMP_TOKENS
+            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+            #endif
+
+            switch (datatype) {
+                case T_UINT8:
+                    kc_parse_assert(atoi(parser->curToken.tok) <= UCHAR_MAX, parser, "ValueError: Value for uint8 overflows.", "", lineNum);
+                    break;
+            }
+
+            if (parser->error) {
+                break;
+            }
 
             ast_node_t varNode = createNode("VAR", name, false, lineNum);
-            
+ 
             switch (datatype) {
                 case T_UINT8:
                     node_push_child(&varNode, createChild("TYPE", "uint8", false));
                     break;
             }
-            
-            advance(parser);
- 
-            // TODO: Change this when adding assignment.
-            node_push_child(&varNode, createChild("NO_INIT", "null", false));
+
+            if (!(assignment)) {
+                node_push_child(&varNode, createChild("NO_INIT", "null", false));
+            } else {
+                node_push_child(&varNode, createChild("VALUE", parser->curToken.tok, false));
+            }
+
             ast_push_node(&parser->ast, varNode);
         }
 

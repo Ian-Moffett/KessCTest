@@ -26,6 +26,7 @@ typedef enum {
     T_SEMI,
     T_UINT8,             // For checking the types.
     T_IDENTIFIER,
+    T_EQUALS,
     INVLD_TOKEN, 
 } tokentype_t;
 
