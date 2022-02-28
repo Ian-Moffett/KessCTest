@@ -202,13 +202,7 @@ static expression_t kc_parse_expr(parser_t* parser, bool call) {
     int lparenCount = 0;
     int rparenCount = 0;
     
-    while (parser->idx < parser->tokenlist.size) { 
-        #ifdef KC_DUMP_TOKENS
-        if (parser->curToken.type) {
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-        }
-        #endif
-        
+    while (parser->idx < parser->tokenlist.size) {  
         if (parser->curToken.type == T_LPAREN) {
             ++lparenCount;
         } else if (parser->curToken.type == T_RPAREN) {
@@ -250,17 +244,8 @@ inline void parse(parser_t* parser) {
 
     while (parser->idx < parser->tokenlist.size && !(parser->error)) {
         parser->curToken = parser->tokenlist.tokens[parser->idx];
-        #ifdef KC_DUMP_TOKENS
-        if (parser->curToken.type) {
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-        }
-        #endif
 
         if (parser->curToken.type == T_PRINT) { 
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
-
             advance(parser); 
             advance(parser);
 
@@ -275,10 +260,6 @@ inline void parse(parser_t* parser) {
                
                 ast_node_t printNode = createNode("PRINTF", eval(expression.expression), true, lineNum);
                 ast_push_node(&parser->ast, printNode);
-
-                #ifdef KC_DUMP_TOKENS
-                printf("KC_EXPRESSION: %s\n", expression.expression);
-                #endif
 
                free(expression.expression);
             } else if (parser->curToken.type == T_QUOTE) {
