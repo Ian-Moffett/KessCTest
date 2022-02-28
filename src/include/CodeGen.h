@@ -3,6 +3,7 @@
 
 #include "AST.h"
 #include "Symbol.h"
+#include "Debugger.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

@@ -289,10 +289,7 @@ inline void parse(parser_t* parser) {
             } else if (parser->curToken.type == T_EOL) {
                 ++lineNum;
             }
-        } else if (isDatatype(parser->curToken)) { 
-            #ifdef KC_DUMP_TOKENS
-            printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-            #endif
+        } else if (isDatatype(parser->curToken)) {  
             bool assignment = false;
             
             tokentype_t datatype = parser->curToken.type;

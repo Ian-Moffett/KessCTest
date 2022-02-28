@@ -12,13 +12,17 @@ void kc_gen_machine_code(ast_t ast) {
     unsigned long long symbolCount = 0;
 
     for (int i = 0; i < ast.size; ++i) {
-        if (strcmp(ast.nodes[i].key, "PRINTF") == 0) {
+        if (strcmp(ast.nodes[i].key, "VAR") == 0) {
             ++symbolCount;
         }
     }
 
     const unsigned long long SYMBOLCOUNT = symbolCount;
     symbol_t symbol_table[SYMBOLCOUNT];
+
+    for (int i = 0; i < SYMBOLCOUNT; ++i) {
+        symbol_table[i].key = NULL;
+    }
 
     unsigned long long lcodec = 0;
     unsigned long long ldatac = 0;
@@ -36,13 +40,7 @@ void kc_gen_machine_code(ast_t ast) {
     for (int i = 0; i < ast.size; ++i) {
         curNode = ast.nodes[i];
 
-        if (strcmp(curNode.key, "PRINTF") == 0) {
-            symbol_t printSym = {
-                .strVal = curNode.value,
-                .intVal = atoi(curNode.value),
-                .key = NULL
-            };
-
+        if (strcmp(curNode.key, "PRINTF") == 0) { 
             if (curSection != S_RODATA) {
                 fprintf(fp, "section .rodata\n");
                 curSection = S_RODATA;
@@ -71,19 +69,43 @@ void kc_gen_machine_code(ast_t ast) {
             fprintf(fp, "_%d: jmp _%d\n\n", lcodec, lcodec + 1);
             ++lcodec;
 
-            if (curSection != S_BSS && strcmp(curNode.children[1].key, "NO_INIT") == 0) {
-                curSection = S_BSS;
-                fprintf(fp, "section .bss\n");
-            } else if (curSection != S_DATA && strcmp(curNode.children[1].key, "VALUE") == 0) {
+                           
+            if (curSection != S_DATA && strcmp(curNode.children[1].key, "VALUE") == 0) {
                 curSection = S_DATA;
                 fprintf(fp, "section .data\n");
+            } else {
+                curSection = S_BSS;
+                fprintf(fp, "section .bss\n");
             }
 
+            symbol_t var = {
+                .strVal = curNode.children[1].value,
+                .intVal = 0,
+                .key = curNode.value
+            }; 
+
+            
+            symbol_t* symb = &symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)];  
+
             if (strcmp(curNode.children[0].value, "uint8") == 0 && curSection == S_BSS) {
+                if (symb->key != NULL) {
+                    if (strcmp(symb->key, curNode.value) == 0) {
+                        kc_log_err("SymbolError: Trying to redefine symbol.", curNode.value, curNode.lineNumber);
+                        codegenerror = true;
+                        break;
+                    }
+                }
+
                 fprintf(fp, "v_%s: resb 1\n\n", curNode.value);
             } else if (curSection == S_DATA) {
+                if (strcmp(curNode.children[0].key, "uint8") == 0) {
+                    var.intVal = atoi(curNode.children[1].value);
+                }
+
                 fprintf(fp, "v_%s: db %s\n\n", curNode.value, curNode.children[1].value);
             }
+
+            *symb = var;
         }
     }
 
