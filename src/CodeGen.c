@@ -128,7 +128,6 @@ void kc_gen_machine_code(ast_t ast) {
 
             // TODO: Allow expressions like this: printf(var + 1);
             if (strcmp(curNode.children[0].value, "TRUE") != 0) {
-
                 fprintf(fp, "LC%d: db \"%s\", 0xA\n\n", ldatac, symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal);
                 ++ldatac;
 
