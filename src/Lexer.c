@@ -65,6 +65,10 @@ static tokentype_t kc_lex_buffervalid(lexer_t* lexer, char* buffer) {
         }
 
         return T_UINT8;
+    } else if (strcmp(lexer->buffer, "if") == 0) {
+        push_token(&lexer->tokenlist, create_token(T_IF, "if", false));
+        kc_lex_reset_buffer(lexer);
+        return T_IF;
     }
 
     return INVLD_TOKEN;
@@ -182,7 +186,7 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
 
         if (IS_NEWLINE(lexer->curChar) || IS_WHITESPACE(lexer->curChar)) {
             if (!(kc_lex_iswhitespace(lexer->buffer) && strlen(lexer->buffer) > 0 && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN)) {
-                if (kc_lex_nondigit(lexer->buffer)) {
+                if (kc_lex_nondigit(lexer->buffer) && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN) {
                     kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
                     lexer->error = true;
                 }
@@ -193,10 +197,27 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
         }
             
         switch (lexer->curChar) {
+            case '{':
+                push_token(&lexer->tokenlist, create_token(T_LBRACE, "{", false));
+                kc_lex_reset_buffer(lexer);
+                ++lexer->idx;
+                continue;
+            case '}':
+                push_token(&lexer->tokenlist, create_token(T_RBRACE, "}", false));
+                kc_lex_reset_buffer(lexer);
+                ++lexer->idx;
+                continue;
             case '=':
                 push_token(&lexer->tokenlist, create_token(T_EQUALS, "=", false));
                 kc_lex_reset_buffer(lexer);
                 ++lexer->idx;
+
+                char* ident = kc_lex_getident(lexer, buffer);
+
+                if (ident) {
+                    push_token(&lexer->tokenlist, create_token(T_IDENTIFIER, ident, true));
+                }
+
                 continue;
             case ';':
                 push_token(&lexer->tokenlist, create_token(T_SEMI, ";", false));

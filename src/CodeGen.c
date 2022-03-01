@@ -8,6 +8,7 @@ void kc_gen_machine_code(ast_t ast) {
     ast_node_t curNode;
 
     bool codegenerror = false;
+    bool cfs = false;       // Control flow statement.
 
     unsigned long long symbolCount = 0;
 
@@ -24,8 +25,9 @@ void kc_gen_machine_code(ast_t ast) {
         symbol_table[i].key = NULL;
     }
 
-    unsigned long long lcodec = 0;
-    unsigned long long ldatac = 0;
+    unsigned long long lcodec = 0;   // Code label count.
+    unsigned long long ldatac = 0;   // Data label count.
+    unsigned long long lcfsc = 0;    // Control flow end label count.
 
     FILE* fp = fopen("/tmp/__KC_SOURCE.s", "w");
 
@@ -41,6 +43,14 @@ void kc_gen_machine_code(ast_t ast) {
         curNode = ast.nodes[i];
 
         if (strcmp(curNode.key, "PRINTF") == 0) { 
+            if (curSection != S_TEXT) {
+                curSection = S_TEXT;
+                fprintf(fp, "section .text\n");
+            }
+
+            fprintf(fp, "_%d: jmp _%d\n\n", lcodec, lcodec + 1);
+            ++lcodec;
+
             if (curSection != S_RODATA) {
                 fprintf(fp, "section .rodata\n");
                 curSection = S_RODATA;
@@ -142,6 +152,51 @@ void kc_gen_machine_code(ast_t ast) {
                 fprintf(fp, "    int 0x80\n\n");
                 ++lcodec;
             }
+        } else if (strcmp(curNode.key, "IF") == 0) {
+            cfs = true;
+
+            if (strcmp(curNode.children[0].value, "TRUE") == 0) {
+                if (!(symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].key) || SYMBOLCOUNT == 0) {             
+                    kc_log_err("SymbolError: Symbol does not exist.", curNode.value, curNode.lineNumber);
+                    codegenerror = true;
+                    break;
+                }
+            }
+
+            if (strcmp(curNode.children[3].value, "TRUE") == 0) {
+                if (!(symbol_table[symb_tbl_hash(curNode.children[2].value, SYMBOLCOUNT)].key) || SYMBOLCOUNT == 0) {
+                    kc_log_err("SymbolError: Symbol does not exist.", curNode.children[2].value, curNode.lineNumber);
+                    codegenerror = true;
+                    break;
+                } 
+            }
+
+            if (curSection != S_TEXT) {
+                fprintf(fp, "section .text\n");
+                curSection = S_TEXT;
+            }
+
+            fprintf(fp, "_%d:\n", lcodec);
+            ++lcodec;
+
+            if (strcmp(curNode.children[1].value, "==") == 0) {
+                if (strcmp(curNode.children[0].value, "TRUE") != 0) {
+                    fprintf(fp, "    ; if (%s %s %s)\n", curNode.value, curNode.children[1].value, curNode.children[2].value);
+                    fprintf(fp, "    mov ebx, %s\n", curNode.value);
+                    fprintf(fp, "    cmp ebx, %s\n", curNode.children[2].value);
+                    fprintf(fp, "    jne CFS%d\n\n", lcfsc);
+                }
+            }
+        } else if (strcmp(curNode.key, "SCOPE-END") == 0) {
+            cfs = false;
+            
+            if (curSection != S_TEXT) {
+                curSection = S_TEXT;
+                fprintf(fp, "section .text\n");
+            }
+
+            fprintf(fp, "CFS%d: jmp _%d\n\n", lcfsc, lcodec);
+            ++lcfsc;
         }
     }
 

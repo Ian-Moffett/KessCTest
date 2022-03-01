@@ -22,6 +22,9 @@ static const char* const TOKENS_STR[] =  {
     "T_UINT8",
     "T_IDENTIFIER",
     "T_EQUALS",
+    "T_IF",
+    "T_LRBACE",
+    "T_RBRACE",
 };
 #endif
 
@@ -237,6 +240,88 @@ inline void parse(parser_t* parser) {
             }
 
             ast_push_node(&parser->ast, varNode);
+        } else if (parser->curToken.type == T_IF) {
+            advance(parser);
+            get_token(parser);
+
+            bool loopgo = true;
+
+            unsigned int lparenc = 0;
+            unsigned int rparenc = 0;
+
+            while (parser->curToken.type == T_LPAREN) {
+                ++lparenc;
+                advance(parser);
+                get_token(parser);
+            }
+
+            if (lparenc == 0) {            
+                kc_log_err("SyntaxError: Invalid syntax.", "", lineNum);
+                parser->error = true;
+                break;
+            }
+
+            ast_node_t ifnode = createNode("IF", parser->curToken.tok, false, lineNum);
+
+            if (parser->curToken.type == T_IDENTIFIER) {
+                node_push_child(&ifnode, createChild("TOKEN1_ID", "TRUE", false));
+            } else {
+                node_push_child(&ifnode, createChild("TOKEN1_ID", "FALSE", false));
+            }
+            
+            advance(parser);
+            get_token(parser);
+
+            bool op = false;
+
+            if (parser->curToken.type = T_EQUALS && peek(parser, parser->idx + 1).type == T_EQUALS) {
+                node_push_child(&ifnode, createChild("OPERATOR", "==", false));
+                op = true;
+                advance(parser);
+                get_token(parser);
+            } else {
+                parser->error = true;
+                ast_push_node(&parser->ast, ifnode);
+                kc_log_err("SyntaxError: Invalid syntax.", "", lineNum);
+            }
+
+            if (op) {
+                advance(parser);
+                get_token(parser);
+                node_push_child(&ifnode, createChild("OPR2", parser->curToken.tok, false));
+
+                if (parser->curToken.type == T_IDENTIFIER) {
+                    node_push_child(&ifnode, createChild("TOKEN2_ID", "TRUE", false));
+                } else {
+                    node_push_child(&ifnode, createChild("TOKEN2_ID", "FALSE", false));
+                }
+
+                advance(parser);
+                get_token(parser);
+
+                while (parser->curToken.type == T_RPAREN) {
+                    ++rparenc;
+                    advance(parser);
+                    get_token(parser);
+                }
+            }
+            
+            ast_push_node(&parser->ast, ifnode);
+
+            // TODO: When added '||' and '&&' operators this may need to be corrected.
+            if (parser->curToken.type != T_EOL && parser->curToken.type != T_SEMI && parser->curToken.type != T_LBRACE) {
+                kc_log_err("SyntaxError: Invalid syntax.", "", lineNum);
+                parser->error = true;
+                break;
+            }
+
+            if (rparenc != lparenc) {
+                kc_log_err("SyntaxError: Mismatched parenthesis.", "", lineNum);
+                parser->error = true;
+                break;
+            }
+        } else if (parser->curToken.type == T_RBRACE) {
+            ast_push_node(&parser->ast, createNode("SCOPE-END", "}", false, lineNum));
         }
 
         ++parser->idx;
