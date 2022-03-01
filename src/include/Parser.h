@@ -4,6 +4,7 @@
 #include "Token.h"
 #include "AST.h"
 #include "Debugger.h"
+#include "ExpParser.h"
 #include <stdbool.h>
 #include <limits.h>
 #include <stdio.h>
