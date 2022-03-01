@@ -286,6 +286,7 @@ inline void parse(parser_t* parser) {
             
             tokentype_t datatype = parser->curToken.type;
             advance(parser);
+            get_token(parser);
 
             kc_parse_assert(parser->curToken.type == T_IDENTIFIER, parser, "SyntaxError: Expected identifier after typename.", "", lineNum);
 
@@ -295,7 +296,9 @@ inline void parse(parser_t* parser) {
                 break;
             }
 
-            advance(parser); 
+            advance(parser);
+
+            get_token(parser);
 
             kc_parse_assert(parser->curToken.type == T_EOL || parser->curToken.type == T_SEMI || parser->curToken.type == T_EQUALS, parser, "SyntaxError: Expected assignment or nothing after identifier.", "", lineNum);
 
@@ -309,7 +312,8 @@ inline void parse(parser_t* parser) {
   
             
             if (assignment) {
-                advance(parser); 
+                advance(parser);
+                get_token(parser);
             }
 
             switch (datatype) {
