@@ -126,19 +126,23 @@ void kc_gen_machine_code(ast_t ast) {
                 curSection = S_RODATA;
             }
 
-            fprintf(fp, "LC%d: db \"%s\", 0xA\n\n", ldatac, symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal);
-            ++ldatac;
+            // TODO: Allow expressions like this: printf(var + 1);
+            if (strcmp(curNode.children[0].value, "TRUE") != 0) {
 
-            curSection = S_TEXT;
-            fprintf(fp, "section .text\n");
+                fprintf(fp, "LC%d: db \"%s\", 0xA\n\n", ldatac, symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal);
+                ++ldatac;
 
-            fprintf(fp, "_%d:\n", lcodec);
-            fprintf(fp, "    mov eax, 4\n");
-            fprintf(fp, "    mov ebx, 1\n");
-            fprintf(fp, "    mov edx, %d\n", strlen(symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal) + 1);
-            fprintf(fp, "    mov ecx, LC%d\n", ldatac - 1);
-            fprintf(fp, "    int 0x80\n\n");
-            ++lcodec;
+                curSection = S_TEXT;
+                fprintf(fp, "section .text\n");
+
+                fprintf(fp, "_%d:\n", lcodec);
+                fprintf(fp, "    mov eax, 4\n");
+                fprintf(fp, "    mov ebx, 1\n");
+                fprintf(fp, "    mov edx, %d\n", strlen(symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal) + 1);
+                fprintf(fp, "    mov ecx, LC%d\n", ldatac - 1);
+                fprintf(fp, "    int 0x80\n\n");
+                ++lcodec;
+            }
         }
     }
 

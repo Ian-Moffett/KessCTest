@@ -98,7 +98,7 @@ static expression_t kc_parse_expr(parser_t* parser, bool call) {
         }
 
 
-        if (parser->curToken.type == T_LPAREN || parser->curToken.type == T_RPAREN || parser->curToken.type == T_DIGIT || isop(parser->curToken)) {
+        if (parser->curToken.type == T_LPAREN || parser->curToken.type == T_RPAREN || parser->curToken.type == T_DIGIT || parser->curToken.type == T_IDENTIFIER || isop(parser->curToken)) {
             exp.expression = (char*)realloc(exp.expression, sizeof(char) * (strlen(parser->curToken.tok) + 5));
             strcat(exp.expression, parser->curToken.tok);
             advance(parser);
@@ -165,8 +165,17 @@ inline void parse(parser_t* parser) {
             } else if (parser->curToken.type == T_EOL) {
                 ++lineNum;
             } else if (parser->curToken.type == T_IDENTIFIER) {
-                ast_node_t printNode = createNode("PRINTF_VAR", parser->curToken.tok, false, lineNum);
-                ast_push_node(&parser->ast, printNode); 
+
+                if (isop(peek(parser, parser->idx + 1))) {                                        
+                    expression_t expression = kc_parse_expr(parser, true);
+                    ast_node_t printNode = createNode("PRINTF_VAR", expression.expression, true, lineNum);
+                    node_push_child(&printNode, createChild("M_EXP", "TRUE", false));
+                    ast_push_node(&parser->ast, printNode); 
+                } else { 
+                    ast_node_t printNode = createNode("PRINTF_VAR", parser->curToken.tok, false, lineNum);
+                    node_push_child(&printNode, createChild("M_EXP", "FALSE", false));
+                    ast_push_node(&parser->ast, printNode); 
+                }
             }
         } else if (isDatatype(parser->curToken)) {  
             bool assignment = false;
