@@ -1,2 +1,1 @@
-uint8 foo;
-uint8 foobar;
+printf(foo);

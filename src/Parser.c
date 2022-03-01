@@ -149,10 +149,7 @@ static token_t peek(parser_t* parser, unsigned long long idx) {
 
 static void advance(parser_t* parser) {
     ++parser->idx;
-    parser->curToken = parser->tokenlist.tokens[parser->idx];
-    #ifdef KC_DUMP_TOKENS
-    printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
-    #endif
+    parser->curToken = parser->tokenlist.tokens[parser->idx]; 
 }
 
 
@@ -193,6 +190,13 @@ static void kc_parse_assert(bool c, parser_t* parser, const char* const MSG, con
 }
 
 
+inline static void get_token(parser_t* parser) {
+     #ifdef KC_DUMP_TOKENS
+    printf("KC_TOKEN: %s => %s\n", TOKENS_STR[parser->curToken.type], parser->curToken.tok);
+    #endif
+}
+
+
 static expression_t kc_parse_expr(parser_t* parser, bool call) {
     expression_t exp = {
         .expression = (char*)calloc(2, sizeof(char)),
@@ -214,6 +218,7 @@ static expression_t kc_parse_expr(parser_t* parser, bool call) {
             exp.expression = (char*)realloc(exp.expression, sizeof(char) * (strlen(parser->curToken.tok) + 5));
             strcat(exp.expression, parser->curToken.tok);
             advance(parser);
+            get_token(parser);
         } else {
             lparenCount = call ? lparenCount + 1 : lparenCount;
             // rparenCount = call ? rparenCount + 1 : rparenCount;
@@ -245,9 +250,13 @@ inline void parse(parser_t* parser) {
     while (parser->idx < parser->tokenlist.size && !(parser->error)) {
         parser->curToken = parser->tokenlist.tokens[parser->idx];
 
+        get_token(parser);
+
         if (parser->curToken.type == T_PRINT) { 
             advance(parser); 
+            get_token(parser);
             advance(parser);
+            get_token(parser);
 
             if (parser->curToken.type == T_DIGIT && isop(peek(parser, parser->idx + 1))) { 
                 expression_t expression = kc_parse_expr(parser, true);
@@ -264,9 +273,11 @@ inline void parse(parser_t* parser) {
                free(expression.expression);
             } else if (parser->curToken.type == T_QUOTE) {
                 advance(parser);
+                get_token(parser);
                 ast_node_t printNode = createNode("PRINTF", parser->curToken.tok, false, lineNum);
                 ast_push_node(&parser->ast, printNode);
                 advance(parser);
+                get_token(parser);
             } else if (parser->curToken.type == T_EOL) {
                 ++lineNum;
             }

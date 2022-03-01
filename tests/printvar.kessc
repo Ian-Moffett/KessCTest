@@ -1,0 +1,2 @@
+uint8 foo = 2;
+printf(foo);

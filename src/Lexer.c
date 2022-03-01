@@ -18,8 +18,14 @@ static char* kc_lex_getident(lexer_t* lexer, char* buffer) {
     char* identbuf = (char*)calloc(2, sizeof(char));
     unsigned int idbidx = 0;
 
-    while (lexer->idx < strlen(buffer) && buffer[lexer->idx] != ' ') {++lexer->idx;}
     while (lexer->idx < strlen(buffer) && buffer[lexer->idx] == ' ') {++lexer->idx;}
+
+    lexer->curChar = buffer[lexer->idx];
+
+    if (IS_DIGIT(lexer->curChar)) {
+        free(identbuf);
+        return NULL;
+    }
 
     while (lexer->idx < strlen(buffer)) {
         lexer->curChar = buffer[lexer->idx];
@@ -198,16 +204,22 @@ tokenlist_t kc_lex_tokenize(lexer_t* lexer, char* buffer) {
                 ++lexer->idx;
                 continue;
             case '(':
+                ++lexer->idx;
+                char* id = kc_lex_getident(lexer, buffer); 
+
                 if (!(kc_lex_iswhitespace(lexer->buffer)) && strlen(lexer->buffer) > 0 && kc_lex_buffervalid(lexer, buffer) == INVLD_TOKEN) {
-                    printf("AH!\n");
                     kc_log_err("SyntaxError: Unexpected token found while lexing.", lexer->buffer, lexer->line);
                     lexer->error = true;
                     continue;
                 }
 
                 push_token(&lexer->tokenlist, create_token(T_LPAREN, "(", false));
-                ++lexer->idx;
                 kc_lex_reset_buffer(lexer);
+
+                if (id) {
+                    push_token(&lexer->tokenlist, create_token(T_IDENTIFIER, id, true));
+                }
+
                 continue;
             case ')':
                 push_token(&lexer->tokenlist, create_token(T_RPAREN, ")", false));
