@@ -1,2 +1,5 @@
 uint8 foo = 1;
+uint8 foobar = 2;
+
 printf(foo);
+printf(foobar);
