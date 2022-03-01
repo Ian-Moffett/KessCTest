@@ -1,2 +1,2 @@
-uint8 foo;
+uint8 foo = 1;
 printf(foo);

@@ -106,6 +106,39 @@ void kc_gen_machine_code(ast_t ast) {
             }
 
             *symb = var;
+        } else if (strcmp(curNode.key, "PRINTF_VAR") == 0) {
+            if (!(symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].key)) {                
+                kc_log_err("SymbolError: Symbol does not exist.", curNode.value, curNode.lineNumber);
+                codegenerror = true;
+                break;
+            }
+            
+            if (curSection != S_TEXT) {
+                fprintf(fp, "section .text\n");
+                curSection = S_TEXT;
+            }
+
+            fprintf(fp, "_%d: jmp _%d\n\n",  lcodec, lcodec + 1);
+            ++lcodec;
+
+            if (curSection != S_RODATA) {
+                fprintf(fp, "section .rodata\n");
+                curSection = S_RODATA;
+            }
+
+            fprintf(fp, "LC%d: db \"%s\", 0xA\n\n", ldatac, symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal);
+            ++ldatac;
+
+            curSection = S_TEXT;
+            fprintf(fp, "section .text\n");
+
+            fprintf(fp, "_%d:\n", lcodec);
+            fprintf(fp, "    mov eax, 4\n");
+            fprintf(fp, "    mov ebx, 1\n");
+            fprintf(fp, "    mov edx, %d\n", strlen(symbol_table[symb_tbl_hash(curNode.value, SYMBOLCOUNT)].strVal) + 1);
+            fprintf(fp, "    mov ecx, LC%d\n", ldatac - 1);
+            fprintf(fp, "    int 0x80\n\n");
+            ++lcodec;
         }
     }
 

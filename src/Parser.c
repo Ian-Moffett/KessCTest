@@ -280,6 +280,9 @@ inline void parse(parser_t* parser) {
                 get_token(parser);
             } else if (parser->curToken.type == T_EOL) {
                 ++lineNum;
+            } else if (parser->curToken.type == T_IDENTIFIER) {
+                ast_node_t printNode = createNode("PRINTF_VAR", parser->curToken.tok, false, lineNum);
+                ast_push_node(&parser->ast, printNode); 
             }
         } else if (isDatatype(parser->curToken)) {  
             bool assignment = false;
