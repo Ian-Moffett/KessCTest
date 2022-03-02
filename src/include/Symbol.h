@@ -7,6 +7,7 @@ typedef struct {
     char* strVal;
     unsigned long long intVal;
     char* key;
+    unsigned int offset;
 } symbol_t;
 
 
