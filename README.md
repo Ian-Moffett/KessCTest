@@ -1,6 +1,5 @@
 <div id="top"></div>
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Issues][issues-shield]][issues-url]
+
+[contributors-shield]: https://img.shields.io/github/contributors/Ian-Moffett/KessC.svg?style=for-the-badge
 
 # KessC. A rewrite of C!
